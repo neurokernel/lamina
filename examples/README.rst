@@ -15,15 +15,19 @@ specification file. This file is the specification of a valid configuration
 file and in addition documents parameters and provides default values in case 
 a field is missing.
 
-Scripts generate an empty configuration file named <example>_default.cfg if
+Scripts generate an empty configuration file named `<example>_default.cfg` if
 it does not exist which is a valid configuration that uses all default values.
 User can edit this file or use a different one but in the latter case should
 provide the name to the script.
 
 Try
-$ ./run_<example>_demo.sh -h
+
+    $ ./run_<example>_demo.sh -h
+    
 or
-$ python <example>_demo.py -h
+
+    $ python <example>_demo.py -h
+
 for all the available options
 
 Results
