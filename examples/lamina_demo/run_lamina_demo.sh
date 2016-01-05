@@ -49,6 +49,6 @@ if (( $rep > 1 )) ; then
     python lamina_demo.py -c $conf -v $i
   done
 else
-  python lamin_demo.py -c $conf -v -1
+  python lamina_demo.py -c $conf -v -1
 fi
 
