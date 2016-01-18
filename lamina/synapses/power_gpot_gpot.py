@@ -6,7 +6,7 @@ from pycuda.compiler import SourceModule
 
 from basesynapse import BaseSynapse
 
-class PowerGpotGpot(BaseSynapse):
+class power_gpot_gpot(BaseSynapse):
 
     def __init__(self, s_dict,synapse_state_pointer, dt, debug=False):
         self.debug = debug
