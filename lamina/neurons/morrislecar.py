@@ -10,7 +10,13 @@ from baseneuron import BaseNeuron
 
 class MorrisLecar(BaseNeuron):
 
-    def __init__(self, n_dict, V_p, dt, debug=False):
+    def __init__(self, n_dict, V_p, dt, debug=False, LPU_id=None,
+                 cuda_verbose = False):):
+        
+        if cuda_verbose:
+            self.compile_options = ['--ptxas-options=-v']
+        else:
+            self.compile_options = []
 
         self.num_neurons = len(n_dict['id'])
         self.dt = np.double(dt)
@@ -45,8 +51,9 @@ class MorrisLecar(BaseNeuron):
         super(MorrisLecar, self).__init__(n_dict, V_p, debug)
 
     @classmethod
-    def initneuron(cls, n_dict, neuronstate_p, dt, debug=False, LPU_id=None):
-        return cls(n_dict, neuronstate_p, dt, debug)
+    def initneuron(cls, n_dict, neuronstate_p, dt, debug=False, LPU_id=None,
+                   cuda_verbose = False):
+        return cls(n_dict, neuronstate_p, dt, debug, cuda_verbose)
 
     @property
     def neuron_class(self):
@@ -138,13 +145,14 @@ class MorrisLecar(BaseNeuron):
         self.update_grid = ((self.num_neurons - 1) / 128 + 1, 1)
         mod = SourceModule(template % {"type": dtype_to_ctype(dtype),
                            "nneu": self.update_block[0]},
-                           options=["--ptxas-options=-v"])
+                           options=self.compile_options)
         func = mod.get_function("hhn_euler_multiple")
 
-        func.prepare([np.intp, np.intp, np.int32, np.intp, scalartype,
-                      np.int32, np.intp, np.intp, np.intp, np.intp,
-                      np.intp, np.intp, np.intp, np.intp, np.intp,
-                      np.intp, np.intp, np.intp])
+        func.prepare('PPiP'+np.dtype(dtype).char+'iPPPPPPPPPPPP')
+        #             [np.intp, np.intp, np.int32, np.intp, scalartype,
+        #              np.int32, np.intp, np.intp, np.intp, np.intp,
+        #              np.intp, np.intp, np.intp, np.intp, np.intp,
+        #              np.intp, np.intp, np.intp])
 
         return func
 
