@@ -812,7 +812,7 @@ class LPU(Module):
         """
 
         if self.total_num_gpot_neurons > 0:
-            sdataset_append(self.output_gpot_file['/array'],
+            dataset_append(self.output_gpot_file['/array'],
                 self.V.get()[self.gpot_order].reshape((1, -1)))
         if self.total_num_spike_neurons > 0:
             dataset_append(self.output_spike_file['/array'],

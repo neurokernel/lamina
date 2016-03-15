@@ -11,7 +11,7 @@ from baseneuron import BaseNeuron
 class MorrisLecar(BaseNeuron):
 
     def __init__(self, n_dict, V_p, dt, debug=False, LPU_id=None,
-                 cuda_verbose = False):):
+                 cuda_verbose = False):
         
         if cuda_verbose:
             self.compile_options = ['--ptxas-options=-v']
