@@ -2,6 +2,7 @@ from __future__ import division
 
 import collections
 import importlib
+import pickle
 
 import networkx as nx
 import numpy as np
@@ -65,9 +66,29 @@ class Cartridge(object):
         ''' make alpha process 'name' a dummy neuron and
             connect it to its parent amacrine cell 'am'
         '''
+        neuron = am.neuron
+        synapses_to_remove = []
+        for synapse in self.neurons[name].outgoing_synapses:
+            synapse.change_pre_neuron(neuron)
+            neuron.add_outgoing_synapse(synapse)
+            synapses_to_remove.append(synapse)
+        
+        for synapse in synapses_to_remove:
+            self.neurons[name].remove_outgoing_synapse(synapse)
+        
+        synapses_to_remove = []
+        
+        for synapse in self.neurons[name].incoming_synapses:
+            synapse.change_post_neuron(neuron)
+            neuron.add_incoming_synapse(synapse)
+            synapses_to_remove.append(synapse)
+        
+        for synapse in synapses_to_remove:
+            self.neurons[name].remove_incoming_synapse(synapse)
+        
         self.neurons[name].make_dummy()
         self.neurons[name].parent = am
-
+    
 
     def get_neighborid(self, neighbor_dr):
         return self.element.get_neighborid(neighbor_dr)
@@ -94,6 +115,9 @@ class NonColumn(object):
         self._elev = elev
         self._azim = azim
         self.neuron = Neuron(params)
+    
+        self.outgoing_synapses = []
+        self.incoming_synapses = []
 
     @property
     def sphere_pos(self):
@@ -195,6 +219,9 @@ class LaminaArray(object):
     def _generate_graph(self):
         G = nx.MultiDiGraph()
         num = 0
+        
+        with open('am', 'wb') as f:
+            pickle.dump(self, f)
 
         # export neurons, each neuron has a unique id (num)
         for i, cartridge in enumerate(self._cartridges):
@@ -204,18 +231,32 @@ class LaminaArray(object):
             # lamina model file
             # dummy neurons are not included
             for name, neuron in cartridge.neurons.items():
+                neuron.id = 'lam_{}_{}'.format(name, i)
                 if not neuron.is_dummy:
                     neuron.add_num(num)
-                    G.add_node(num, neuron.params)
-                    G.node[num].update({'selector':
-                                        self.get_selector(i, name)})
+                    G.add_node(neuron.id, neuron.params)
+                    if neuron.is_input:
+                        G.node[neuron.id].update({'selector':
+                            self.get_selector(i, name)})
+                    else:
+                        G.add_node(neuron.id+'_port',
+                            {'class': 'Port', 'name': name+'_port',
+                             'port_type': 'gpot', 'port_io': 'out',
+                             'selector': self.get_selector(i, name)})
+                        G.add_edge(neuron.id, neuron.id+'_port', type='directed')
                     num += 1
+    
 
         for i, am in enumerate(self._amacrines.itervalues()):
             neuron = am.neuron
+            neuron.id = 'lam_am_{}'.format(i)
             neuron.add_num(num)
-            G.add_node(num, neuron.params)
-            G.node[num].update({'selector': am.selector})
+            G.add_node(neuron.id, neuron.params)
+            G.add_node(neuron.id+'_port',
+                        {'class': 'Port', 'name': name+'_port',
+                         'port_type': 'gpot', 'port_io': 'out',
+                         'selector': am.selector})
+            G.add_edge(neuron.id, neuron.id+'_port', type='directed')
             num += 1
 
         self._num_neurons = num
@@ -224,16 +265,20 @@ class LaminaArray(object):
         # export synapses
         # `num` is not required since a synapse is identified by the neurons it
         # connects but it is convenient to have one
+        a = 0
         for cartridge in self._cartridges:
             for neuron in cartridge.neurons.itervalues():
-                for synapse in neuron.outgoing_synapses:
-                    if not synapse.post_neuron.is_input:
-                        synapse.params.update({'id': num})
-                        synapse.process_before_export()
-                        G.add_edge(synapse.pre_neuron.num,
-                                   synapse.post_neuron.num,
-                                   attr_dict=synapse.params)
-                        num += 1
+#                if not neuron.is_dummy:
+                    for synapse in neuron.outgoing_synapses:
+    #                    if not synapse.post_neuron.is_input:
+                            synapse_id = 'syn_{}'.format(num)
+                            synapse.process_before_export()
+                            G.add_node(synapse_id, synapse.params)
+                            G.add_edge(synapse.pre_neuron.id, synapse_id,
+                                       type = 'directed')
+                            G.add_edge(synapse_id, synapse.post_neuron.id,
+                                       type = 'directed')
+                            num += 1
 
         self.G = G
 
@@ -423,12 +468,19 @@ class Synapse(object):
     @property
     def params(self):
         return self._params
+    
+    def change_post_neuron(self, post_neuron):
+        self.post_neuron = post_neuron
+        self.params['postname'] = post_neuron.name
+    
+    def change_pre_neuron(self, pre_neuron):
+        self.pre_neuron = pre_neuron
+        self.params['prename'] = pre_neuron.name
 
     def process_before_export(self):
         # TODO remove what is not needed
         # merge with retina classes if exactly the same
         # assumes all conductances are gpot to gpot
-        self._params.update({'class': 3})
         self._params.update({'conductance': True})
         if 'cart' in self._params.keys():
             del self._params['cart']
