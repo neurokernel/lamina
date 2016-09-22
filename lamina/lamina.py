@@ -115,11 +115,8 @@ class LaminaArray(object):
         self.hex_array = hex_array
 
         modelname = config['Lamina']['model']
-        try:
-            self.model = importlib.import_module('vision_models.{}'
-                                                 .format(modelname))
-        except ImportError:
-            self.model = importlib.import_module('lamina.vision_models.{}'
+        
+        self.model = importlib.import_module('lamina.vision_models.{}'
                                                  .format(modelname))
 
         self._set_elements()
