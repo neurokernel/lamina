@@ -9,6 +9,7 @@ import networkx as nx
 import neurokernel.core_gpu as core
 from neurokernel.tools.logging import setup_logger
 from neurokernel.tools.timing import Timer
+from neurokernel.LPU.OutputProcessors.FileOutputProcessor import FileOutputProcessor
 
 from lamina.LPU import LPU
 import lamina.lamina as lam
@@ -51,13 +52,16 @@ def add_lamina_LPU(config, i, lamina, manager):
     G = lamina.get_graph()
     nx.write_gexf(G, gexf_file)
 
-    n_dict_ret, s_dict_ret = LPU.lpu_parser(gexf_file)
+    comp_dict, conns = LPU.lpu_parser_legacy(gexf_file)
     lamina_id = get_lamina_id(i)
-    modules = []
-    manager.add(LPU, lamina_id, dt, n_dict_ret, s_dict_ret,
-                input_file=None, output_file=output_file,
-                device=2*i+1, debug=debug, time_sync=time_sync,
-                modules=modules, input_generator=None)
+    
+    output_processor = FileOutputProcessor(
+                            [('V',None)], output_file,
+                            sample_interval=1)
+
+    manager.add(LPU, lamina_id, dt, comp_dict, conns,
+                output_processors = [output_processor],
+                device=i, debug=debug, time_sync=time_sync)
 
 
 def start_simulation(config, manager):
@@ -128,18 +132,17 @@ def main():
 
     setup_logging(config)
 
-    eye_num = config['General']['eye_num']
     num_rings = config['Lamina']['rings']
     radius = config['Lamina']['radius']
 
     manager = core.Manager()
-    for i in range(eye_num):
-        with Timer('instantiation of lamina #{}'.format(i)):
-            hexagon = hx.HexagonArray(num_rings=num_rings, radius=radius,
-                                      transform=None)
 
-            lamina = lam.LaminaArray(hexagon, config)
-            add_lamina_LPU(config, i, lamina, manager)
+    with Timer('instantiation of lamina'):
+        hexagon = hx.HexagonArray(num_rings=num_rings, radius=radius,
+                                  transform=None)
+
+        lamina = lam.LaminaArray(hexagon, config)
+        add_lamina_LPU(config, 0, lamina, manager)
 
     start_simulation(config, manager)
 
