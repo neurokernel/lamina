@@ -2,7 +2,6 @@ from __future__ import division
 
 import collections
 import importlib
-import pickle
 
 import networkx as nx
 import numpy as np
@@ -219,9 +218,6 @@ class LaminaArray(object):
     def _generate_graph(self):
         G = nx.MultiDiGraph()
         num = 0
-        
-        with open('am', 'wb') as f:
-            pickle.dump(self, f)
 
         # export neurons, each neuron has a unique id (num)
         for i, cartridge in enumerate(self._cartridges):
