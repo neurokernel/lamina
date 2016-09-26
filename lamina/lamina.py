@@ -151,7 +151,7 @@ class LaminaArray(object):
         elif relative_am == 'equal':
             self.n_amacrine = hex_array.num_elements
         else:
-            self.n_amacrine = config['Lamina']['n_amacrine']
+            self.n_amacrine = config['Lamina']['number_am']
 
         # Have at least one Am cell
         self.n_amacrine = max(1, self.n_amacrine)
@@ -174,24 +174,224 @@ class LaminaArray(object):
                 neuron = CartridgeNeuron(cart, neuron_params, is_input=True)
                 cart.add_neuron(neuron)
 
-    def _connect_composition_I(self, config):
-        am_params = self.model.AM_PARAMS
+#    def _connect_composition_I(self, config):
+#        am_params = self.model.AM_PARAMS
+#        n_amacrine = self.n_amacrine
+#
+#        am_dic = collections.OrderedDict()
+#
+#        for i in range(n_amacrine):
+#            am_elev, am_azim = AmUtils.get_ampos_from_cart(i, self)
+#            am_dic.update(
+#                {AmUtils.am_name(i): self.get_am(i, am_elev, am_azim,
+#                                                 am_params)})
+#
+#        for cartridge in self.cartridges:
+#            for name in AmUtils.am_names:
+#                am_num = cartridge.gid % n_amacrine
+#                cartridge.replace_am(name, am_dic[AmUtils.am_name(am_num)])
+#
+#        self._amacrines = am_dic
+
+    def _connect_composition_Ia(self, config):
+    # bound for amacrine connection distance
+        bound = config['Composition']['Original']['b_amacrine']
+        model = self.model
         n_amacrine = self.n_amacrine
 
         am_dic = collections.OrderedDict()
+        synapse_list = []
+
+#        angle = 2*np.pi*np.random.random(n_amacrine);
+#        rad = self.hex_array._radius*np.sqrt(np.random.random(n_amacrine));
+#        am_xpos = rad*np.cos(angle);
+#        am_ypos = rad*np.sin(angle);
+
+        angle = np.zeros(n_amacrine)
+        rad = np.zeros(n_amacrine)
+        am_xpos = np.zeros(n_amacrine)
+        am_ypos = np.zeros(n_amacrine)
+        
+        for i in range(n_amacrine):
+            dist = 0
+            while dist < bound/2:
+                angle_tmp = 2*np.pi*np.random.random()
+                rad_tmp = self.hex_array._radius*np.sqrt(np.random.random())
+                xpos_tmp = rad_tmp*np.cos(angle_tmp)
+                ypos_tmp = rad_tmp*np.sin(angle_tmp)
+                if i > 1:
+                    dist = np.sqrt((xpos_tmp-am_xpos[:i])**2+(ypos_tmp-am_ypos[:i])**2).min()
+                else:
+                    dist = bound
+            
+            angle[i] = angle_tmp
+            rad[i] = rad_tmp
+            am_xpos[i] = xpos_tmp
+            am_ypos[i] = ypos_tmp
+        
+        dim_a, dim_b = self.hex_array._transform(am_xpos, am_ypos)
 
         for i in range(n_amacrine):
-            am_elev, am_azim = AmUtils.get_ampos_from_cart(i, self)
+            # XXX not the best way to access InterCartridgeNeuron
             am_dic.update(
-                {AmUtils.am_name(i): self.get_am(i, am_elev, am_azim,
-                                                 am_params)})
+                {'Am'+str(i): NonColumn(
+                    i, dim_a[i], dim_b[i], model.AM_PARAMS)})
+        # TODO: where to put synapse from Am to Am?
+        # right now all synapse are listed inside a cartridge
+        # even if the replaced dummy neuron results in Am to Am synapse
+        alpha_profiles = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6']
+        fill = np.zeros((n_amacrine, len(self._cartridges)), np.int32);
+        count = 0
+        
+        hex_loc = self.hex_array.hex_loc
+        for i, cartridge in enumerate(self._cartridges):
+            hx_loc = hex_loc[i]
+            xpos = hex_loc[i,0]
+            ypos = hex_loc[i,1]
 
-        for cartridge in self.cartridges:
-            for name in AmUtils.am_names:
-                am_num = cartridge.gid % n_amacrine
-                cartridge.replace_am(name, am_dic[AmUtils.am_name(am_num)])
+            #calculate distance and find amacrine cells within
+            #distance defined by bound
+            dist = np.sqrt((xpos-am_xpos)**2 + (ypos-am_ypos)**2)
+            suitable_am = np.nonzero(dist <= bound)[0]
+            # if less than 4 neurons in the bound, get
+            # the 4 closest amacrine cells
+            if suitable_am.size < 4:
+                suitable_am = np.argsort(dist)[0:4]
 
+            for name in alpha_profiles:
+                assigned = False
+                for am_num in np.random.permutation(suitable_am):
+                    if fill[am_num, count] < 3:
+                        fill[am_num, count] += 1
+                        synapses = cartridge.replace_am(name,
+                                                        am_dic['Am'+str(am_num)])
+                        #synapse_list.extend(synapses)
+                        assigned = True
+                        break
+                if not assigned:
+                    # causes problems later
+                    raise ValueError('Likely need more amacrine cells.'
+                                     ' {} in cartridge {} not assigned.'
+                                     .format(name, cartridge.gid))
+            count += 1
+
+        self.am_xpos = am_xpos
+        self.am_ypos = am_ypos
         self._amacrines = am_dic
+        self.fill = fill
+        #lamina.composition_rules.append( {'neurons': am_list, 'synapses': synapse_list} )
+
+    def _connect_composition_I(self, config):
+        np.random.seed(1000)
+        bound = config['Composition']['Original']['b_amacrine']
+        model = self.model
+        n_amacrine = self.n_amacrine
+        max_radius = self.hex_array.get_maximum_radius()
+
+        am_dic = collections.OrderedDict()
+        synapse_list = []
+        
+        minimum_space = 0.1 * max_radius
+        
+        am_xpos = np.empty(n_amacrine, dtype = np.double)
+        am_ypos = np.empty(n_amacrine, dtype = np.double)
+        
+        for i in range(n_amacrine):
+            if i != 0:
+                while(1):
+                    angle = 2*np.pi*np.random.random();
+                    rad = np.sqrt(np.random.random())*max_radius;
+                    x = rad*np.cos(angle);
+                    y = rad*np.sin(angle);
+                    if (np.sqrt( ((am_xpos[:i]-x)**2 + (am_ypos[:i]-y)**2).min()) >
+                            ((1+np.random.randn()*0.1) * minimum_space)):
+                        am_xpos[i] = x
+                        am_ypos[i] = y
+                        break
+            else:
+                angle = 2*np.pi*np.random.random();
+                rad = np.sqrt(np.random.random())*max_radius;
+                x = rad*np.cos(angle);
+                y = rad*np.sin(angle);
+                am_xpos[i] = x
+                am_ypos[i] = y
+    
+        
+        dim_a, dim_b = self.hex_array._transform(am_xpos, am_ypos)
+
+        for i in range(n_amacrine):
+            # XXX not the best way to access InterCartridgeNeuron
+            am_dic.update(
+                {'Am'+str(i): NonColumn(
+                    i, dim_a[i], dim_b[i], model.AM_PARAMS)})
+
+        # TODO: where to put synapse from Am to Am?
+        # right now all synapse are listed inside a cartridge
+        # even if the replaced dummy neuron results in Am to Am synapse
+        alpha_profiles = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6']
+        fill = np.zeros((n_amacrine, len(self._cartridges)), np.int32);
+
+        xx = self.hex_array.hex_loc[:,0] #np.asarray([a.pos[0] for a in lamina.hex_array], dtype = np.double)
+        yy = self.hex_array.hex_loc[:,1] #np.asarray([a.pos[1] for a in lamina.elements], dtype = np.double)
+
+        for i in range(n_amacrine):
+            xpos = am_xpos[i]
+            ypos = am_ypos[i]
+
+            dist = np.sqrt((xpos-xx)**2 + (ypos-yy)**2)
+            ind = np.argsort(dist)
+            distsort = dist[ind]
+            n = np.nonzero(distsort > self.hex_array._get_column_d()*2)[0][0]
+            ind = ind[:n]
+
+            fill[i, ind[0]] = 3
+            for j in range(1, min(3, ind.size)):
+                fill[i, ind[j]] = 2
+
+            for j in range(3, min(12, ind.size)):
+                fill[i, ind[j]] = 1
+                
+        sumfill = np.sum(fill, axis = 0)
+
+        for i in range(len(self._cartridges)):
+            xpos = xx[i]
+            ypos = yy[i]
+
+            if sumfill[i] < 6:
+                dist = np.sqrt((xpos-am_xpos)**2 + (ypos-am_ypos)**2)
+                ind = np.argsort(dist)
+                less = 6 - sumfill[i]
+                for j in range(less):
+                    fill[ind[j], i] += 1
+            elif sumfill[i] > 6:
+                ind = np.nonzero(fill[:,i])[0]
+                dist = np.sqrt( (xpos - am_xpos[ind])**2 + (ypos-am_ypos[ind])**2)
+                ind1 = np.argsort(dist)
+                more = sumfill[i] - 6
+                for j in range(more):
+                    fill[ind[ind1[j]], i] -= 1
+        
+        sumfill = np.sum(fill, axis = 0)
+        assert(np.all(sumfill == 6))
+        
+        for i, cartridge in enumerate(self._cartridges):
+            ind = np.nonzero(fill[:,i])[0]
+            n_profiles = fill[ind, i]
+        
+            profiles = np.random.permutation(6)
+            count = 0
+            for j in range(ind.size):
+                am = am_dic['Am'+str(ind[j])]
+                for k in range(n_profiles[j]):
+                    synapses = cartridge.replace_am(
+                                    alpha_profiles[profiles[count]], am)
+                    count += 1
+
+        self.am_xpos = am_xpos
+        self.am_ypos = am_ypos
+        self.fill = fill
+        self._amacrines = am_dic
+        #lamina.composition_rules.append( {'neurons': am_list, 'synapses': synapse_list} )
 
     def _connect_composition_II(self):
         model = self.model
@@ -578,7 +778,13 @@ class Synapse(object):
             del self._params['scale']
 
 def main():
-    pass
+    from retina.screen.map.mapimpl import AlbersProjectionMap
+    import retina.geometry.hexagon as hex
+    from retina.configreader import ConfigReader
+    config=ConfigReader('retlam_default.cfg','../template_spec.cfg').conf
+    transform = AlbersProjectionMap(config['Retina']['radius'],config['Retina']['eulerangles']).invmap
+    hexarray = hex.HexagonArray(num_rings = 14, radius = config['Retina']['radius'], transform = transform)
+    a = LaminaArray(hexarray, config)
 
 if __name__ == "__main__":
     main()
