@@ -214,6 +214,96 @@ class LaminaArray(object):
                     cartridge.neurons[synapse_dict['prename']],
                     cartridge.neurons[synapse_dict['postname']])
                 synapse_list.append(synapse)
+    
+    def generate_neuroarch_gexf(self):
+        G_neuroarch = nx.DiGraph()
+        hex_loc = self.hex_array.hex_loc
+    
+        for i, cartridge in enumerate(self._cartridges):
+            sphere_pos = cartridge.sphere_pos
+            hx_loc = hex_loc[i]
+            circuit_name = 'cartridge_{}'.format(i)
+
+            G_neuroarch.add_node('circuit_'+circuit_name,
+                                 {'3d_elev': sphere_pos[0],
+                                  '3d_azim': sphere_pos[1],
+                                  '2d_x': hx_loc[0],
+                                  '2d_y': hx_loc[1]})
+
+            for name, neuron in cartridge.neurons.items():
+                neuron.circuit = circuit_name
+                if not neuron.is_dummy:
+                    neuron.id = 'neuron_{}_{}'.format(name, i)
+                    G_neuroarch.add_node(neuron.id, neuron.params.copy())
+                    G_neuroarch.node[neuron.id].update(
+                        {'3d_elev': sphere_pos[0],
+                         '3d_azim': sphere_pos[1],
+                         '2d_x': hx_loc[0],
+                         '2d_y': hx_loc[1],
+                         'circuit': circuit_name})
+                    if neuron.is_input:
+                        G_neuroarch.node[neuron.id].update(
+                            {'selector': self.get_selector(i, name)})
+                    else: # assuming all other columnar neurons are output neurons
+                        G_neuroarch.add_node(neuron.id+'_port',
+                            {'class': 'Port', 'name': name+'_port',
+                             'port_type': 'gpot', 'port_io': 'out',
+                             'circuit': circuit_name,
+                             'selector': self.get_selector(i, name)})
+                        G_neuroarch.add_edge(neuron.id, neuron.id+'_port', type='directed')
+                else:
+                    neuron.id = 'dummy_{}_{}'.format(name, i)
+                    G_neuroarch.add_node(neuron.id, neuron.params.copy())
+                    G_neuroarch.node[neuron.id].update(
+                        {'3d_elev': sphere_pos[0],
+                         '3d_azim': sphere_pos[1],
+                         '2d_x': hx_loc[0],
+                         '2d_y': hx_loc[1],
+                         'circuit': circuit_name,
+                         'parent': 'Am_{}'.format(am.parent.gid)})
+    
+        for i, am in enumerate(self._amacrines.itervalues()):
+            neuron = am.neuron
+            neuron.id = 'neuron_Am_{}'.format(i)
+            G_neuroarch.add_node(neuron.id, neuron.params)
+            G_neuroarch.node[neuron.id].update(
+                    {'circuit': 'cr1',
+                     '3d_elev': neuron.sphere_pos[0],
+                     '3d_azim': neuron.sphere_pos[1],
+                     '2d_x': self.am_xpos[i],
+                     '2d_y': self.am_ypos[i]})
+            G_neuroarch.add_node(neuron.id+'_port',
+                        {'class': 'Port', 'name': name+'_port',
+                         'port_type': 'gpot', 'port_io': 'out',
+                         'circuit': 'cr1',
+                         'selector': am.selector})
+            G_neuroarch.add_edge(neuron.id, neuron.id+'_port', type='directed')
+        
+        for cartridge in self._cartridges:
+            for neuron in cartridge.neurons.itervalues():
+#                if not neuron.is_dummy:
+                    for synapse in neuron.outgoing_synapses:
+    #                    if not synapse.post_neuron.is_input:
+                            synapse_id = 'synapse_{}'.format(num)
+                            synapse.process_before_export()
+                            G_neuroarch.add_node(synapse_id, synapse.params)
+                            if isinstance(synapse.pre_neuron, CartridgeNeuron) \
+                             and isinstance(synapse.post_neuron, CartridgeNeuron):
+                                if synapse.pre_neuron.parent == synapse.post_neuron.parent:
+                                    G_neuroarch.node[synapse_id].update(
+                                        {'circuit': synapse.pre_neuron.circuit})
+                                else:
+                                    G_neuroarch.node[synapse_id].update(
+                                        {'circuit': 'cr2'})
+                            else:
+                                G_neuroarch.node[synapse_id].update(
+                                        {'circuit': 'cr1'})
+                            G_neuroarch.add_edge(synapse.pre_neuron.id, synapse_id,
+                                       type = 'directed')
+                            G_neuroarch.add_edge(synapse_id, synapse.post_neuron.id,
+                                       type = 'directed')
+
+        return G_neuroarch
 
     def _generate_graph(self):
         G = nx.MultiDiGraph()
@@ -234,7 +324,7 @@ class LaminaArray(object):
                     if neuron.is_input:
                         G.node[neuron.id].update({'selector':
                             self.get_selector(i, name)})
-                    else:
+                    else: # assuming all other columnar neurons are output neurons
                         G.add_node(neuron.id+'_port',
                             {'class': 'Port', 'name': name+'_port',
                              'port_type': 'gpot', 'port_io': 'out',
@@ -261,6 +351,8 @@ class LaminaArray(object):
         # export synapses
         # `num` is not required since a synapse is identified by the neurons it
         # connects but it is convenient to have one
+        
+        # ignored all Am->Am connection
         a = 0
         for cartridge in self._cartridges:
             for neuron in cartridge.neurons.itervalues():
