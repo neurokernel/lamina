@@ -557,8 +557,11 @@ class LaminaArray(object):
                         pass
                     G.add_node(neuron.id, tmp)
                     if neuron.is_input:
-                        G.node[neuron.id].update({'selector':
-                            self.get_selector(i, name)})
+                        G.node[neuron.id].update(
+                            {'selector': self.get_selector(i, name)})
+                        G.add_node(neuron.id+'_buffer',
+                                   {'class': 'BufferVoltage',
+                                    'name': name})
                         G.add_node(neuron.id+'_aggregator',
                                    {'class': 'Aggregator',
                                     'name': name})
@@ -570,9 +573,11 @@ class LaminaArray(object):
                         G.add_edge(neuron.id+'_aggregator',
                                    neuron.id+'_aggregator_port',
                                    variable = 'I')
-                        G.add_edge(neuron.id,
-                                   neuron.id+'_aggregator',
-                                   variable = 'V')
+                        G.add_edge(neuron.id, neuron.id+'_buffer')
+                        G.add_edge(neuron.id+'_buffer', neuron.id+'_aggregator')
+#                        G.add_edge(neuron.id,
+#                                   neuron.id+'_aggregator',
+#                                   variable = 'V')
                     else: # assuming all other columnar neurons are output neurons
                         G.add_node(neuron.id+'_port',
                             {'class': 'Port', 'name': name+'_port',
@@ -612,7 +617,7 @@ class LaminaArray(object):
 #                if not neuron.is_dummy:
                     for synapse in neuron.outgoing_synapses:
     #                    if not synapse.post_neuron.is_input:
-                            synapse_id = 'syn_{}'.format(num)
+                            synapse_id = 'synapse_{}'.format(num)
                             synapse.process_before_export()
                             tmp = synapse.params.copy()
                             try:
