@@ -137,7 +137,7 @@ class NonColumn(object):
 
 
 class LaminaArray(object):
-    def __init__(self, hex_array, config):
+    def __init__(self, hex_array, config, gen_graph = True):
         self.hex_array = hex_array
 
         modelname = config['Lamina']['model']
@@ -431,10 +431,10 @@ class LaminaArray(object):
 
             G_neuroarch.add_node('circuit_'+circuit_name,
                                  {'name': 'Cartridge',
-                                  '3d_elev': float(sphere_pos[0]),
-                                  '3d_azim': float(sphere_pos[1]),
-                                  '2d_x': float(hx_loc[0]),
-                                  '2d_y': float(hx_loc[1])})
+                                  'elev_3d': float(sphere_pos[0]),
+                                  'azim_3d': float(sphere_pos[1]),
+                                  'x_2d': float(hx_loc[0]),
+                                  'y_2d': float(hx_loc[1])})
 
             for name, neuron in cartridge.neurons.items():
                 neuron.circuit = circuit_name
@@ -445,10 +445,10 @@ class LaminaArray(object):
                     G_neuroarch.add_node(neuron.id, neuron.params.copy())
                     G_neuroarch.node[neuron.id].update(
                         {'name': name,
-                         '3d_elev': float(sphere_pos[0]),
-                         '3d_azim': float(sphere_pos[1]),
-                         '2d_x': float(hx_loc[0]),
-                         '2d_y': float(hx_loc[1]),
+                         'elev_3d': float(sphere_pos[0]),
+                         'azim_3d': float(sphere_pos[1]),
+                         'x_2d': float(hx_loc[0]),
+                         'y_2d': float(hx_loc[1]),
                          'circuit': circuit_name})
                     if neuron.is_input:
                         G_neuroarch.node[neuron.id].update(
@@ -487,10 +487,10 @@ class LaminaArray(object):
                     G_neuroarch.add_node(neuron.id, neuron.params.copy())
                     G_neuroarch.node[neuron.id].update(
                         {'name': name,
-                         '3d_elev': float(sphere_pos[0]),
-                         '3d_azim': float(sphere_pos[1]),
-                         '2d_x': float(hx_loc[0]),
-                         '2d_y': float(hx_loc[1]),
+                         'elev_3d': float(sphere_pos[0]),
+                         'azim_3d': float(sphere_pos[1]),
+                         'x_2d': float(hx_loc[0]),
+                         'y_2d': float(hx_loc[1]),
                          'circuit': circuit_name,
                          'parent': 'Am_{}'.format(neuron.parent.gid)})
     
@@ -506,10 +506,10 @@ class LaminaArray(object):
             G_neuroarch.node[neuron.id].update(
                     {'name': 'Amacrine',
                      'circuit': 'cr1',
-                     '3d_elev': float(am.sphere_pos[0]),
-                     '3d_azim': float(am.sphere_pos[1]),
-                     '2d_x': float(self.am_xpos[i]),
-                     '2d_y': float(self.am_ypos[i])})
+                     'elev_3d': float(am.sphere_pos[0]),
+                     'azim_3d': float(am.sphere_pos[1]),
+                     'x_2d': float(self.am_xpos[i]),
+                     'y_2d': float(self.am_ypos[i])})
 #            G_neuroarch.add_node(neuron.id+'_port',
 #                        {'class': 'Port', 'name': neuron.id+'_port',
 #                         'port_type': 'gpot', 'port_io': 'out',
