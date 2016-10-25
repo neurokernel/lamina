@@ -137,7 +137,7 @@ class NonColumn(object):
 
 
 class LaminaArray(object):
-    def __init__(self, hex_array, config):
+    def __init__(self, hex_array, config, gen_graph = True):
         self.hex_array = hex_array
 
         modelname = config['Lamina']['model']
@@ -162,7 +162,8 @@ class LaminaArray(object):
         self._connect_composition_II()
         self._connect_composition_I(config)
 
-        self._generate_graph()
+        if gen_graph:
+            self._generate_graph()
 
     def _set_elements(self):
         self._cartridges = [Cartridge(el) for el in self.hex_array.elements]
@@ -394,7 +395,7 @@ class LaminaArray(object):
         self.am_ypos = am_ypos
         self.fill = fill
         self._amacrines = am_dic
-        with open('fill.h5', 'wb') as f:
+        with open('fill.pkl', 'wb') as f:
             pickle.dump(self.fill, f)
         #lamina.composition_rules.append( {'neurons': am_list, 'synapses': synapse_list} )
 
@@ -526,6 +527,8 @@ class LaminaArray(object):
                             pre = synapse.pre_neuron
                             post = synapse.post_neuron
                             synapse_id = 'synapse_{}_to_{}'.format(pre.id, post.id)
+                            if synapse.params.has_key('via'):
+                                synapse_id += '_{}'.format(synapse.params['via'])
                             synapse.process_before_export()
                             G_neuroarch.add_node(synapse_id, synapse.params)
                             
@@ -553,7 +556,8 @@ class LaminaArray(object):
             for synapse in neuron.outgoing_synapses:
                 pre = synapse.pre_neuron
                 post = synapse.post_neuron
-                synapse_id = 'synapse_{}_to_{}'.format(pre.id, post.id)
+                synapse_id = 'synapse_{}_to_{}_via_{}'.format(
+                                pre.id, post.id, synapse.params['via'])
                 synapse.process_before_export()
                 G_neuroarch.add_node(synapse_id, synapse.params)
                 G_neuroarch.node[synapse_id].update({'circuit': 'cr1'})
