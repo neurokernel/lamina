@@ -11,11 +11,13 @@ from neurokernel.tools.logging import setup_logger
 from neurokernel.tools.timing import Timer
 from neurokernel.LPU.OutputProcessors.FileOutputProcessor import FileOutputProcessor
 
-from lamina.LPU import LPU
+from neurokernel.LPU.LPU import LPU
 import lamina.lamina as lam
 
 import lamina.geometry.hexagon as hx
 from lamina.configreader import ConfigReader
+from retina.screen.map.mapimpl import AlbersProjectionMap
+from retina.NDComponents.MembraneModels.BufferVoltage import BufferVoltage
 
 
 dtype = np.double
@@ -52,8 +54,10 @@ def add_lamina_LPU(config, i, lamina, manager):
     G = lamina.get_graph()
     nx.write_gexf(G, gexf_file)
 
-    comp_dict, conns = LPU.lpu_parser_legacy(gexf_file)
+    comp_dict, conns = LPU.graph_to_dicts(G)
     lamina_id = get_lamina_id(i)
+    
+    extra_comps = [BufferVoltage]
     
     output_processor = FileOutputProcessor(
                             [('V',None)], output_file,
@@ -61,7 +65,8 @@ def add_lamina_LPU(config, i, lamina, manager):
 
     manager.add(LPU, lamina_id, dt, comp_dict, conns,
                 output_processors = [output_processor],
-                device=i, debug=debug, time_sync=time_sync)
+                device=i, debug=debug, time_sync=time_sync,
+                extra_comps = extra_comps)
 
 
 def start_simulation(config, manager):
@@ -134,12 +139,15 @@ def main():
 
     num_rings = config['Lamina']['rings']
     radius = config['Lamina']['radius']
+    eulerangles = config['Lamina']['eulerangles']
 
     manager = core.Manager()
 
     with Timer('instantiation of lamina'):
+        transform = AlbersProjectionMap(radius,
+                                        eulerangles[0:3]).invmap
         hexagon = hx.HexagonArray(num_rings=num_rings, radius=radius,
-                                  transform=None)
+                                  transform = transform)
 
         lamina = lam.LaminaArray(hexagon, config)
         add_lamina_LPU(config, 0, lamina, manager)
