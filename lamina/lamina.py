@@ -198,18 +198,13 @@ class LaminaArray(object):
 #        self._amacrines = am_dic
 
     def _connect_composition_Ia(self, config):
-    # bound for amacrine connection distance
+        # bound for amacrine connection distance
         bound = config['Composition']['Original']['b_amacrine']
         model = self.model
         n_amacrine = self.n_amacrine
 
         am_dic = collections.OrderedDict()
         synapse_list = []
-
-#        angle = 2*np.pi*np.random.random(n_amacrine);
-#        rad = self.hex_array._radius*np.sqrt(np.random.random(n_amacrine));
-#        am_xpos = rad*np.cos(angle);
-#        am_ypos = rad*np.sin(angle);
 
         angle = np.zeros(n_amacrine)
         rad = np.zeros(n_amacrine)
@@ -269,7 +264,6 @@ class LaminaArray(object):
                         fill[am_num, count] += 1
                         synapses = cartridge.replace_am(name,
                                                         am_dic['Am'+str(am_num)])
-                        #synapse_list.extend(synapses)
                         assigned = True
                         break
                 if not assigned:
@@ -283,7 +277,6 @@ class LaminaArray(object):
         self.am_ypos = am_ypos
         self._amacrines = am_dic
         self.fill = fill
-        #lamina.composition_rules.append( {'neurons': am_list, 'synapses': synapse_list} )
 
     def _connect_composition_I(self, config):
         np.random.seed(1000)
@@ -335,8 +328,8 @@ class LaminaArray(object):
         alpha_profiles = ['a1', 'a2', 'a3', 'a4', 'a5', 'a6']
         fill = np.zeros((n_amacrine, len(self._cartridges)), np.int32);
 
-        xx = self.hex_array.hex_loc[:,0] #np.asarray([a.pos[0] for a in lamina.hex_array], dtype = np.double)
-        yy = self.hex_array.hex_loc[:,1] #np.asarray([a.pos[1] for a in lamina.elements], dtype = np.double)
+        xx = self.hex_array.hex_loc[:,0]
+        yy = self.hex_array.hex_loc[:,1]
 
         for i in range(n_amacrine):
             xpos = am_xpos[i]
@@ -511,46 +504,38 @@ class LaminaArray(object):
                      'azim_3d': float(am.sphere_pos[1]),
                      'x_2d': float(self.am_xpos[i]),
                      'y_2d': float(self.am_ypos[i])})
-#            G_neuroarch.add_node(neuron.id+'_port',
-#                        {'class': 'Port', 'name': neuron.id+'_port',
-#                         'port_type': 'gpot', 'port_io': 'out',
-#                         'circuit': 'cr1',
-#                         'selector': am.selector})
-#            G_neuroarch.add_edge(neuron.id, neuron.id+'_port', type='directed')
 
         num = 0
         for cartridge in self._cartridges:
             for neuron in cartridge.neurons.itervalues():
-#                if not neuron.is_dummy:
-                    for synapse in neuron.outgoing_synapses:
-    #                    if not synapse.post_neuron.is_input:
-                            pre = synapse.pre_neuron
-                            post = synapse.post_neuron
-                            synapse_id = 'synapse_{}_to_{}'.format(pre.id, post.id)
-                            if synapse.params.has_key('via'):
-                                synapse_id += '_{}'.format(synapse.params['via'])
-                            synapse.process_before_export()
-                            G_neuroarch.add_node(synapse_id, synapse.params)
-                            
-                            if isinstance(pre, CartridgeNeuron) \
-                             and isinstance(post, CartridgeNeuron):
-                                if pre.parent == post.parent:
-                                    G_neuroarch.node[synapse_id].update(
-                                        {'circuit': synapse.pre_neuron.circuit})
-                                else:
-                                    G_neuroarch.node[synapse_id].update(
-                                        {'circuit': 'cr2'})
-                            else:
-                                G_neuroarch.node[synapse_id].update(
-                                        {'circuit': 'cr1'})
-                            G_neuroarch.add_edge(pre.id, synapse_id)
-                            if synapse.post_neuron.is_input:
-                                G_neuroarch.add_edge(synapse_id,
-                                                     post.id+'_aggregator')
-                            else:
-                                G_neuroarch.add_edge(synapse_id, post.id)
-                            num+=1
-        
+                for synapse in neuron.outgoing_synapses:
+                    pre = synapse.pre_neuron
+                    post = synapse.post_neuron
+                    synapse_id = 'synapse_{}_to_{}'.format(pre.id, post.id)
+                    if synapse.params.has_key('via'):
+                        synapse_id += '_{}'.format(synapse.params['via'])
+                    synapse.process_before_export()
+                    G_neuroarch.add_node(synapse_id, synapse.params)
+                    
+                    if isinstance(pre, CartridgeNeuron) \
+                     and isinstance(post, CartridgeNeuron):
+                        if pre.parent == post.parent:
+                            G_neuroarch.node[synapse_id].update(
+                                {'circuit': synapse.pre_neuron.circuit})
+                        else:
+                            G_neuroarch.node[synapse_id].update(
+                                {'circuit': 'cr2'})
+                    else:
+                        G_neuroarch.node[synapse_id].update(
+                                {'circuit': 'cr1'})
+                    G_neuroarch.add_edge(pre.id, synapse_id)
+                    if synapse.post_neuron.is_input:
+                        G_neuroarch.add_edge(synapse_id,
+                                             post.id+'_aggregator')
+                    else:
+                        G_neuroarch.add_edge(synapse_id, post.id)
+                    num+=1
+
         for am in self._amacrines.itervalues():
             neuron = am.neuron
             for synapse in neuron.outgoing_synapses:
@@ -609,13 +594,9 @@ class LaminaArray(object):
                                     'selector': self.get_selector(i, name)+'_agg',
                                     'name': name})
                         G.add_edge(neuron.id+'_aggregator',
-                                   neuron.id+'_aggregator_port')#,
-                                   #variable = 'I')
+                                   neuron.id+'_aggregator_port')
                         G.add_edge(neuron.id, neuron.id+'_buffer')
                         G.add_edge(neuron.id+'_buffer', neuron.id+'_aggregator')
-#                        G.add_edge(neuron.id,
-#                                   neuron.id+'_aggregator',
-#                                   variable = 'V')
                     else: # assuming all other columnar neurons are output neurons
                         G.add_node(neuron.id+'_port',
                             {'class': 'Port', 'name': name,
@@ -635,11 +616,6 @@ class LaminaArray(object):
             except:
                 pass
             G.add_node(neuron.id, tmp)
-#            G.add_node(neuron.id+'_port',
-#                        {'class': 'Port', 'name': name+'_port',
-#                         'port_type': 'gpot', 'port_io': 'out',
-#                         'selector': am.selector})
-#            G.add_edge(neuron.id, neuron.id+'_port', type='directed')
             num += 1
 
         self._num_neurons = num
@@ -653,27 +629,25 @@ class LaminaArray(object):
         a = 0
         for cartridge in self._cartridges:
             for neuron in cartridge.neurons.itervalues():
-#                if not neuron.is_dummy:
-                    for synapse in neuron.outgoing_synapses:
-    #                    if not synapse.post_neuron.is_input:
-                            pre = synapse.pre_neuron
-                            post = synapse.post_neuron
-                            synapse_id = 'synapse_{}_to_{}'.format(pre.id, post.id)
-                            synapse.process_before_export()
-                            tmp = synapse.params.copy()
-                            try:
-                                tmp.pop('via')
-                            except:
-                                pass
-                            G.add_node(synapse_id, tmp)
-                            G.add_edge(pre.id, synapse_id)
-                            if synapse.post_neuron.is_input:
-                                G.add_edge(synapse_id,
-                                           post.id+'_aggregator')
-                            else:
-                                G.add_edge(synapse_id, post.id)
-                            num += 1
-        
+                for synapse in neuron.outgoing_synapses:
+                    pre = synapse.pre_neuron
+                    post = synapse.post_neuron
+                    synapse_id = 'synapse_{}_to_{}'.format(pre.id, post.id)
+                    synapse.process_before_export()
+                    tmp = synapse.params.copy()
+                    try:
+                        tmp.pop('via')
+                    except:
+                        pass
+                    G.add_node(synapse_id, tmp)
+                    G.add_edge(pre.id, synapse_id)
+                    if synapse.post_neuron.is_input:
+                        G.add_edge(synapse_id,
+                                   post.id+'_aggregator')
+                    else:
+                        G.add_edge(synapse_id, post.id)
+                    num += 1
+
         for am in self._amacrines.itervalues():
             neuron = am.neuron
             for synapse in neuron.outgoing_synapses:
@@ -740,8 +714,6 @@ class LaminaArray(object):
                     if neuron.is_input:
                         selectors.append(self.get_selector(i, name)+'_agg')
 
-#        for i, am in enumerate(self._amacrines.itervalues()):
-#            selectors.append(am.selector)
         return selectors
 
     # method is not trivial since it handles the case
