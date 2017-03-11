@@ -44,57 +44,57 @@ CARTRIDGE_NEURON_LIST = [
     {
         'name': 'L1', 'class': 'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name': 'L2', 'class': 'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name': 'L3', 'class': 'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name': 'L4', 'class': 'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name': 'L5', 'class': 'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name':'T1', 'class':'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name':'C2', 'class':'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     },
     {
         'name':'C3', 'class':'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': -5.0, 'V4': 10.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.0025, 'initV': -50., 'initn': 0.5, 'offset': 0.02
     }
 ] + \
@@ -108,13 +108,13 @@ CARTRIDGE_NEURON_LIST = [
 AM_PARAMS = {
     'name': 'Am', 'class': 'MorrisLecar',
         'V1': -1.0, 'V2': 15, 'V3': 0.0, 'V4': 30.0,
-        'V_l': -50.0, 'V_ca': 10.0, 'V_k': -70.0,
-        'G_l': 0.5, 'G_ca': 1.1, 'G_k': 2.0,
+        'V_l': -50.0, 'V_Ca': 10.0, 'V_k': -70.0,
+        'G_l': 0.5, 'G_Ca': 1.1, 'G_k': 2.0,
         'phi': 0.2, 'initV': -51.84, 'initn': 0.0306, 'offset': 0.0
 }
 
 
-INTRA_CARTRIDGE_SYNAPSE_LIST = [
+INTRA_CaRTRIDGE_SYNAPSE_LIST = [
     {'prename':'R1', 'postname':'L1', 'class':'PowerGPotGPot',
     'cart':None, 'reverse':HIST_RP, 'delay':1,
     'threshold':R_THRESHOLD, 'slope':0.00002, 'power':1.0, 'saturation':0.0008,
