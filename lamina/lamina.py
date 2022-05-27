@@ -424,7 +424,7 @@ class LaminaArray(object):
             circuit_name = 'cartridge_{}'.format(i)
 
             G_neuroarch.add_node('circuit_'+circuit_name,
-                                 {'name': 'Cartridge',
+                                 **{'name': 'Cartridge',
                                   'elev_3d': float(sphere_pos[0]),
                                   'azim_3d': float(sphere_pos[1]),
                                   'x_2d': float(hx_loc[0]),
@@ -437,29 +437,29 @@ class LaminaArray(object):
                     if neuron.is_input:
                         neuron.id += '_port'
                     G_neuroarch.add_node(neuron.id, neuron.params.copy())
-                    G_neuroarch.node[neuron.id].update(
-                        {'name': name,
+                    G_neuroarch.nodes[neuron.id].update(
+                        **{'name': name,
                          'elev_3d': float(sphere_pos[0]),
                          'azim_3d': float(sphere_pos[1]),
                          'x_2d': float(hx_loc[0]),
                          'y_2d': float(hx_loc[1]),
                          'circuit': circuit_name})
                     if neuron.is_input:
-                        G_neuroarch.node[neuron.id].update(
-                            {'selector': self.get_selector(i, name)})
+                        G_neuroarch.nodes[neuron.id].update(
+                            **{'selector': self.get_selector(i, name)})
                         G_neuroarch.add_node(
                                    neuron.id+'_buffer',
-                                   {'class': 'BufferVoltage',
+                                   **{'class': 'BufferVoltage',
                                     'name': name,
                                     'circuit': circuit_name})
                         G_neuroarch.add_node(
                                    neuron.id+'_aggregator',
-                                   {'class': 'Aggregator',
+                                   **{'class': 'Aggregator',
                                     'name': name,
                                     'circuit': circuit_name})
                         G_neuroarch.add_node(
                                    neuron.id+'_aggregator_port',
-                                   {'class': 'Port',
+                                   **{'class': 'Port',
                                     'port_type': 'gpot', 'port_io': 'out',
                                     'selector': self.get_selector(i, name)+'_agg',
                                     'name': name,
@@ -471,16 +471,16 @@ class LaminaArray(object):
                     
                     else: # assuming all other columnar neurons are output neurons
                         G_neuroarch.add_node(neuron.id+'_port',
-                            {'class': 'Port', 'name': name,
+                            **{'class': 'Port', 'name': name,
                              'port_type': 'gpot', 'port_io': 'out',
                              'circuit': circuit_name,
                              'selector': self.get_selector(i, name)})
                         G_neuroarch.add_edge(neuron.id, neuron.id+'_port')
                 else:
                     neuron.id = 'dummy_{}_{}'.format(name, i)
-                    G_neuroarch.add_node(neuron.id, neuron.params.copy())
-                    G_neuroarch.node[neuron.id].update(
-                        {'name': name,
+                    G_neuroarch.add_node(neuron.id, **neuron.params.copy())
+                    G_neuroarch.nodes[neuron.id].update(
+                        **{'name': name,
                          'elev_3d': float(sphere_pos[0]),
                          'azim_3d': float(sphere_pos[1]),
                          'x_2d': float(hx_loc[0]),
@@ -489,16 +489,16 @@ class LaminaArray(object):
                          'parent': 'Am_{}'.format(neuron.parent.gid)})
     
         G_neuroarch.add_node('circuit_cr1',
-                             {'name': 'cr1'})
+                             **{'name': 'cr1'})
         G_neuroarch.add_node('circuit_cr2',
-                             {'name': 'cr2'})
+                             **{'name': 'cr2'})
     
         for i, am in enumerate(self._amacrines.itervalues()):
             neuron = am.neuron
             neuron.id = 'neuron_Am_{}'.format(i)
-            G_neuroarch.add_node(neuron.id, neuron.params)
-            G_neuroarch.node[neuron.id].update(
-                    {'name': 'Amacrine',
+            G_neuroarch.add_node(neuron.id, **neuron.params)
+            G_neuroarch.nodes[neuron.id].update(
+                    **{'name': 'Amacrine',
                      'circuit': 'cr1',
                      'elev_3d': float(am.sphere_pos[0]),
                      'azim_3d': float(am.sphere_pos[1]),
@@ -515,19 +515,19 @@ class LaminaArray(object):
                     if synapse.params.has_key('via'):
                         synapse_id += '_{}'.format(synapse.params['via'])
                     synapse.process_before_export()
-                    G_neuroarch.add_node(synapse_id, synapse.params)
+                    G_neuroarch.add_node(synapse_id, **synapse.params)
                     
                     if isinstance(pre, CartridgeNeuron) \
                      and isinstance(post, CartridgeNeuron):
                         if pre.parent == post.parent:
-                            G_neuroarch.node[synapse_id].update(
-                                {'circuit': synapse.pre_neuron.circuit})
+                            G_neuroarch.nodes[synapse_id].update(
+                                **{'circuit': synapse.pre_neuron.circuit})
                         else:
-                            G_neuroarch.node[synapse_id].update(
-                                {'circuit': 'cr2'})
+                            G_neuroarch.nodes[synapse_id].update(
+                                **{'circuit': 'cr2'})
                     else:
-                        G_neuroarch.node[synapse_id].update(
-                                {'circuit': 'cr1'})
+                        G_neuroarch.nodes[synapse_id].update(
+                                **{'circuit': 'cr1'})
                     G_neuroarch.add_edge(pre.id, synapse_id)
                     if synapse.post_neuron.is_input:
                         G_neuroarch.add_edge(synapse_id,
@@ -544,8 +544,8 @@ class LaminaArray(object):
                 synapse_id = 'synapse_{}_to_{}_via_{}'.format(
                                 pre.id, post.id, synapse.params['via'])
                 synapse.process_before_export()
-                G_neuroarch.add_node(synapse_id, synapse.params)
-                G_neuroarch.node[synapse_id].update({'circuit': 'cr1'})
+                G_neuroarch.add_node(synapse_id, **synapse.params)
+                G_neuroarch.nodes[synapse_id].update(**{'circuit': 'cr1'})
                 G_neuroarch.add_edge(pre.id, synapse_id)
                 if synapse.post_neuron.is_input:
                     G_neuroarch.add_edge(synapse_id,
@@ -578,18 +578,18 @@ class LaminaArray(object):
                         pass
                     if neuron.is_input:
                         neuron.id += '_port'
-                    G.add_node(neuron.id, tmp)
+                    G.add_node(neuron.id, **tmp)
                     if neuron.is_input:
-                        G.node[neuron.id].update(
-                            {'selector': self.get_selector(i, name)})
+                        G.nodes[neuron.id].update(
+                            **{'selector': self.get_selector(i, name)})
                         G.add_node(neuron.id+'_buffer',
-                                   {'class': 'BufferVoltage',
+                                   **{'class': 'BufferVoltage',
                                     'name': name})
                         G.add_node(neuron.id+'_aggregator',
-                                   {'class': 'Aggregator',
+                                   **{'class': 'Aggregator',
                                     'name': name})
                         G.add_node(neuron.id+'_aggregator_port',
-                                   {'class': 'Port',
+                                   **{'class': 'Port',
                                     'port_type': 'gpot', 'port_io': 'out',
                                     'selector': self.get_selector(i, name)+'_agg',
                                     'name': name})
@@ -599,7 +599,7 @@ class LaminaArray(object):
                         G.add_edge(neuron.id+'_buffer', neuron.id+'_aggregator')
                     else: # assuming all other columnar neurons are output neurons
                         G.add_node(neuron.id+'_port',
-                            {'class': 'Port', 'name': name,
+                            **{'class': 'Port', 'name': name,
                              'port_type': 'gpot', 'port_io': 'out',
                              'selector': self.get_selector(i, name)})
                         G.add_edge(neuron.id, neuron.id+'_port')
@@ -615,7 +615,7 @@ class LaminaArray(object):
                 tmp.pop('genetic.neurotransmitter')
             except:
                 pass
-            G.add_node(neuron.id, tmp)
+            G.add_node(neuron.id, **tmp)
             num += 1
 
         self._num_neurons = num
@@ -639,7 +639,7 @@ class LaminaArray(object):
                         tmp.pop('via')
                     except:
                         pass
-                    G.add_node(synapse_id, tmp)
+                    G.add_node(synapse_id, **tmp)
                     G.add_edge(pre.id, synapse_id)
                     if synapse.post_neuron.is_input:
                         G.add_edge(synapse_id,
@@ -660,7 +660,7 @@ class LaminaArray(object):
                     tmp.pop('via')
                 except:
                     pass
-                G.add_node(synapse_id, tmp)
+                G.add_node(synapse_id, **tmp)
                 G.add_edge(pre.id, synapse_id)
                 if synapse.post_neuron.is_input:
                     G.add_edge(synapse_id,
