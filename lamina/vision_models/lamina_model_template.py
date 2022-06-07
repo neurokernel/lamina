@@ -114,7 +114,7 @@ AM_PARAMS = {
 }
 
 
-INTRA_CaRTRIDGE_SYNAPSE_LIST = [
+INTRA_CARTRIDGE_SYNAPSE_LIST = [
     {'prename':'R1', 'postname':'L1', 'class':'PowerGPotGPot',
     'cart':None, 'reverse':HIST_RP, 'delay':1,
     'threshold':R_THRESHOLD, 'slope':0.00002, 'power':1.0, 'saturation':0.0008,
