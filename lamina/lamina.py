@@ -338,7 +338,11 @@ class LaminaArray(object):
             dist = np.sqrt((xpos-xx)**2 + (ypos-yy)**2)
             ind = np.argsort(dist)
             distsort = dist[ind]
-            n = np.nonzero(distsort > self.hex_array._get_column_d()*2)[0][0]
+            n = np.nonzero(distsort > self.hex_array._get_column_d()*2)[0]
+            if not len(n):
+                n = len(ind)
+            else:
+                n = n[0]
             ind = ind[:n]
 
             fill[i, ind[0]] = 3
@@ -493,7 +497,7 @@ class LaminaArray(object):
         G_neuroarch.add_node('circuit_cr2',
                              **{'name': 'cr2'})
     
-        for i, am in enumerate(self._amacrines.itervalues()):
+        for i, am in enumerate(self._amacrines.values()):
             neuron = am.neuron
             neuron.id = 'neuron_Am_{}'.format(i)
             G_neuroarch.add_node(neuron.id, **neuron.params)
@@ -507,7 +511,7 @@ class LaminaArray(object):
 
         num = 0
         for cartridge in self._cartridges:
-            for neuron in cartridge.neurons.itervalues():
+            for neuron in cartridge.neurons.values():
                 for synapse in neuron.outgoing_synapses:
                     pre = synapse.pre_neuron
                     post = synapse.post_neuron
@@ -536,7 +540,7 @@ class LaminaArray(object):
                         G_neuroarch.add_edge(synapse_id, post.id)
                     num+=1
 
-        for am in self._amacrines.itervalues():
+        for am in self._amacrines.values():
             neuron = am.neuron
             for synapse in neuron.outgoing_synapses:
                 pre = synapse.pre_neuron
@@ -605,7 +609,7 @@ class LaminaArray(object):
                         G.add_edge(neuron.id, neuron.id+'_port')
                     num += 1
 
-        for i, am in enumerate(self._amacrines.itervalues()):
+        for i, am in enumerate(self._amacrines.values()):
             neuron = am.neuron
             neuron.id = 'neuron_Am_{}'.format(i)
             neuron.add_num(num)
@@ -628,7 +632,7 @@ class LaminaArray(object):
         # ignored all Am->Am connection
         a = 0
         for cartridge in self._cartridges:
-            for neuron in cartridge.neurons.itervalues():
+            for neuron in cartridge.neurons.values():
                 for synapse in neuron.outgoing_synapses:
                     pre = synapse.pre_neuron
                     post = synapse.post_neuron
@@ -648,7 +652,7 @@ class LaminaArray(object):
                         G.add_edge(synapse_id, post.id)
                     num += 1
 
-        for am in self._amacrines.itervalues():
+        for am in self._amacrines.values():
             neuron = am.neuron
             for synapse in neuron.outgoing_synapses:
                 pre = synapse.pre_neuron
